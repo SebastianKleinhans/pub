@@ -14,7 +14,7 @@ echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
 # 2️⃣ Privates Dotfiles-Repository per SSH klonen
 echo "🔐 Klone privates Dotfiles-Repository..."
 export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes"
-git clone git@github.com:DEINUSERNAME/dotfiles.git ~/dotfiles
+git clone git@github.com:SebastianKleinhans/dotfiles.git ~/dotfiles
 
 # 3️⃣ Starte das vollständige Bootstrapping mit `just`
 cd ~/dotfiles
