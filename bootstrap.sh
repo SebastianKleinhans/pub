@@ -1,4 +1,3 @@
----
 # Justfile für sicheres Setup mit öffentlichem Bootstrap-Skript
 set shell := /bin/bash -euo pipefail
 
@@ -20,7 +19,7 @@ docker-install:
 
 bootstrap:
     echo "🔐 Lade privates Repository mit Bootstrap-Skript..."
-    chezmoi init --apply git@github.com:DEINUSERNAME/dotfiles-private.git
+    chezmoi init --apply git@github.com:SebastianKleinhans/dotfiles.git
     chezmoi apply
 
 chezmoi-setup:
