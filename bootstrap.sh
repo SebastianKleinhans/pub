@@ -16,7 +16,7 @@ else
 fi
 
 # 2️⃣ Prüfen, ob SSH-Schlüssel für Zugriff auf privates Repository existiert
-if [ ! -f ~/.ssh/id_rsa ]; then
+if [ ! -f ~/.ssh/id_ed25519 ]; then
     echo "❌ Fehler: SSH-Schlüssel ~/.ssh/id_rsa nicht gefunden!"
     exit 1
 fi
