@@ -20,7 +20,7 @@ docker-install:
 
 bootstrap:
     echo "🔐 Lade privates Repository mit Bootstrap-Skript..."
-    chezmoi init --apply git@github.com:SebastianKleinhans/dotfiles.git
+    chezmoi init --apply git@github.com:DEINUSERNAME/dotfiles-private.git
     chezmoi apply
 
 chezmoi-setup:
