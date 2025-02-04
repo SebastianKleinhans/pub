@@ -1,42 +1,37 @@
-set shell := ["bash", "-c"]
+#!/bin/bash
+set -euo pipefail
 
-install:
-	echo "📦 Installiere benötigte Pakete..."
-	sudo apt update && sudo apt upgrade -y
-	sudo apt install -y \
-	git zsh tmux neovim aptitude net-tools iputils-ping bind9-dnsutils \
-	curl wget ca-certificates lsb-release gnupg rsync stow software-properties-common
+echo "🔄 Starte minimales Bootstrapping..."
 
-docker-install:
-	echo "🐳 Installiere Docker nach offizieller Dokumentation..."
-	sudo install -m 0755 -d /etc/apt/keyrings
-	curl -fsSL https://download.docker.com/linux/debian/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
-	sudo chmod a+r /etc/apt/keyrings/docker.asc
-	echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-	sudo apt update
-	sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-	sudo usermod -aG docker $USER
-	newgrp docker
+# 1️⃣ Just installieren (falls nicht vorhanden)
+if ! command -v just &> /dev/null; then
+    echo "⚡ Installiere 'just' aus offizieller Quelle..."
+    mkdir -p ~/bin
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/bin
+    export PATH="$HOME/bin:$PATH"
+    echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
+else
+    echo "✅ 'just' ist bereits installiert, überspringe Installation."
+fi
 
-chezmoi-install:
-	echo "🛠️ Installiere chezmoi direkt von der Quelle..."
-	sh -c "$(curl -fsLS get.chezmoi.io)"
+# 3️⃣ Privates Dotfiles-Repository per SSH klonen (falls nicht vorhanden)
+if [ ! -d ~/dotfiles ]; then
+    echo "🔐 Klone privates Dotfiles-Repository..."
+    export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+    git clone git@github.com:SebastianKleinhans/dotfiles.git ~/dotfiles
+else
+    echo "✅ Dotfiles-Repository bereits vorhanden, überspringe Klonen."
+fi
 
-bootstrap:
-	echo "🔧 Starte vollständiges Bootstrapping..."
-	just install
-	just docker-install
-	just chezmoi-install
-	just apply-dotfiles
+# 4️⃣ Prüfen, ob `justfile` existiert
+if [ ! -f ~/dotfiles/justfile ]; then
+    echo "❌ Fehler: Kein justfile in ~/dotfiles gefunden!"
+    exit 1
+fi
 
-apply-dotfiles:
-	echo "🛠️ Wende Dotfiles mit chezmoi an..."
-	chezmoi init --apply git@github.com:SebastianKleinhans/dotfiles.git
-	chezmoi apply
+# 5️⃣ Starte das vollständige Bootstrapping mit `just`
+cd ~/dotfiles
+~/bin/just bootstrap
 
-update:
-	echo "🔄 Führe System-Updates durch..."
-	sudo apt update && sudo apt upgrade -y
-	chezmoi update --apply
-
-all: bootstrap
+echo "✅ Bootstrapping abgeschlossen!"
