@@ -1,37 +1,42 @@
----
-# Justfile für sicheres Setup mit öffentlichem Bootstrap-Skript
-set shell := /bin/bash -euo pipefail
+#!/bin/bash
+set -euo pipefail
 
-install:
-    echo "📦 Installiere benötigte Pakete..."
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install -y git zsh tmux neovim aptitude net-tools iputils-ping dnsutils curl wget ca-certificates lsb-release gnupg rsync stow chezmoi docker-ce docker-ce-cli containerd.io
+echo "🔄 Starte vollständige Einrichtung..."
 
-bootstrap:
-    echo "🔐 Lade privates Repository mit Bootstrap-Skript..."
-    chezmoi init --apply git@github.com:DEINUSERNAME/dotfiles-private.git
-    chezmoi apply
+# 1️⃣ Wichtige Pakete installieren
+echo "📦 Installiere Basis-Pakete..."
+sudo apt update
+sudo apt install -y curl wget git zsh tmux neovim aptitude net-tools iputils-ping dnsutils ca-certificates lsb-release gnupg rsync stow
 
-chezmoi-setup:
-    echo "🛠️ Initialisiere und wende chezmoi Konfiguration an..."
-    chezmoi apply
+# 2️⃣ Just installieren, falls nicht vorhanden
+if ! command -v just &> /dev/null; then
+    echo "📦 Installiere 'just'..."
+    sudo apt install -y just
+fi
 
-docker-wsl:
-    echo "⚙️ Konfiguriere Docker für WSL..."
-    echo '{"experimental": true, "features": {"buildkit": true}}' | sudo tee /etc/docker/daemon.json
-    sudo systemctl restart docker
+# 3️⃣ ChezMoi aus offiziellem Repository installieren
+if ! command -v chezmoi &> /dev/null; then
+    echo "📦 Installiere 'chezmoi'..."
+    sudo apt install -y chezmoi || sh -c "$(curl -fsLS get.chezmoi.io)"
+fi
 
-ssh-setup:
-    echo "🔐 Entschlüssele SSH-Keys mit GPG..."
-    mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    gpg --batch --yes --decrypt --output ~/.ssh/id_rsa ~/dotfiles/id_rsa.gpg
-    chmod 600 ~/.ssh/id_rsa
-    gpg --batch --yes --decrypt --output ~/.ssh/id_rsa.pub ~/dotfiles/id_rsa.pub.gpg
-    chmod 644 ~/.ssh/id_rsa.pub
+# 4️⃣ Docker Repository hinzufügen, falls nicht vorhanden
+if ! dpkg -l | grep -q docker-ce; then
+    echo "🐳 Füge Docker-Repository hinzu..."
+    sudo apt install -y apt-transport-https software-properties-common
+    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo tee /usr/share/keyrings/docker-archive-keyring.gpg > /dev/null
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt update
+    sudo apt install -y docker-ce docker-ce-cli containerd.io
+fi
 
-update:
-    echo "🔄 Führe Update durch..."
-    sudo apt update && sudo apt upgrade -y
-    chezmoi update --apply
+# 5️⃣ Justfile laden und ausführen
+if [ ! -d "$HOME/dotfiles" ]; then
+    echo "🔐 Klone dotfiles Repository..."
+    git clone https://github.com/DEINUSERNAME/dotfiles.git "$HOME/dotfiles"
+fi
 
-all: install bootstrap docker-wsl ssh-setup
+cd "$HOME/dotfiles"
+just all
+
+echo "✅ Installation abgeschlossen!"
