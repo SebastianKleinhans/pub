@@ -1,5 +1,5 @@
 #!/bin/bash
-set shell := ["bash", "-euo", "pipefail"]
+set -euo pipefail
 
 echo "🔄 Starte minimales Bootstrapping..."
 
